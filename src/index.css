@@ -1,0 +1,95 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-void: #0a0a0f;
+  --color-panel: #12121c;
+  --color-neon-green: #39ff14;
+  --color-neon-purple: #b026ff;
+  --color-neon-blue: #00d4ff;
+  --color-neon-pink: #ff2bd6;
+  --color-neon-amber: #ffb800;
+  --font-display: 'Orbitron', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+@utility glow-green {
+  text-shadow: 0 0 6px #39ff14, 0 0 18px #39ff1499, 0 0 42px #39ff1455;
+}
+@utility glow-purple {
+  text-shadow: 0 0 6px #b026ff, 0 0 18px #b026ff99, 0 0 42px #b026ff55;
+}
+@utility glow-blue {
+  text-shadow: 0 0 6px #00d4ff, 0 0 18px #00d4ff99, 0 0 42px #00d4ff55;
+}
+@utility box-glow-green {
+  box-shadow: 0 0 8px #39ff14aa, 0 0 24px #39ff1455, inset 0 0 12px #39ff1433;
+}
+@utility box-glow-purple {
+  box-shadow: 0 0 8px #b026ffaa, 0 0 24px #b026ff55, inset 0 0 12px #b026ff33;
+}
+@utility box-glow-blue {
+  box-shadow: 0 0 8px #00d4ffaa, 0 0 24px #00d4ff55, inset 0 0 12px #00d4ff33;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-void);
+  color: #e6e6f0;
+  font-family: var(--font-mono);
+  overflow-x: hidden;
+}
+
+.grid-floor {
+  background-image:
+    linear-gradient(to right, #b026ff22 1px, transparent 1px),
+    linear-gradient(to bottom, #b026ff22 1px, transparent 1px);
+  background-size: 48px 48px;
+  animation: grid-scroll 6s linear infinite;
+}
+
+@keyframes grid-scroll {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 48px;
+  }
+}
+
+.scanlines {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.03) 0px,
+    rgba(255, 255, 255, 0.03) 1px,
+    transparent 2px,
+    transparent 4px
+  );
+}
+
+.shuffle-btn {
+  background: linear-gradient(90deg, #39ff14, #00d4ff, #b026ff, #39ff14);
+  background-size: 300% 100%;
+  animation: btn-flow 4s linear infinite;
+}
+
+@keyframes btn-flow {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 300% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grid-floor,
+  .shuffle-btn {
+    animation: none;
+  }
+}
