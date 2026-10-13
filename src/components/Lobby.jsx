@@ -1,8 +1,24 @@
 import { AnimatePresence, motion, useSpring, useTransform } from 'framer-motion'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import NameChip from './NameChip'
+import WalkInForm from './WalkInForm'
 import { LEVEL_META, SKILL_META } from '../lib/meta'
 import { DEMO_MODE, MIN_PARTICIPANTS_TO_SHUFFLE } from '../config'
+
+// Shrinks the lobby as headcount grows so everyone fits on one projector screen without scrolling.
+function densityFor(count) {
+  if (count > 60) return 'dense'
+  if (count > 30) return 'compact'
+  return 'normal'
+}
+
+const COUNTER_SIZE = {
+  normal: 'text-[7rem] sm:text-[10rem]',
+  compact: 'text-[6rem] sm:text-[8rem]',
+  dense: 'text-[4.5rem] sm:text-[6rem]',
+}
+
+const controlButton = 'text-[11px] tracking-widest underline-offset-4 hover:underline'
 
 function AnimatedCount({ value }) {
   const spring = useSpring(0, { stiffness: 90, damping: 18 })
@@ -38,9 +54,30 @@ function Legend({ participants }) {
   )
 }
 
-export default function Lobby({ participants, newIds, lastUpdated, error, loading, onShuffle, lastTeams, onShowLastTeams }) {
-  const canShuffle = participants.length >= MIN_PARTICIPANTS_TO_SHUFFLE
+export default function Lobby({
+  participants,
+  walkIns,
+  roster,
+  absentIds,
+  newIds,
+  lastUpdated,
+  error,
+  loading,
+  onShuffle,
+  lastTeams,
+  onShowLastTeams,
+  onToggleAbsent,
+  onAddWalkIn,
+  onRemoveWalkIn,
+  onResetCheckIns,
+}) {
+  const [addingWalkIn, setAddingWalkIn] = useState(false)
+  const canShuffle = roster.length >= MIN_PARTICIPANTS_TO_SHUFFLE
   const liveColor = error ? '#ff3b3b' : '#39ff14'
+  const absentCount = participants.filter((p) => absentIds.has(p.id)).length
+  const chips = [...participants, ...walkIns]
+  const density = densityFor(chips.length)
+  const activateChip = (p) => (p.walkIn ? onRemoveWalkIn(p) : onToggleAbsent(p))
 
   return (
     <motion.div
@@ -67,17 +104,19 @@ export default function Lobby({ participants, newIds, lastUpdated, error, loadin
           LIVE REGISTRATIONS
         </div>
         <motion.div
-          key={participants.length}
+          key={roster.length}
           initial={{ scale: 1.12 }}
           animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 300, damping: 12 }}
-          className="font-display text-[7rem] leading-none font-black text-neon-green glow-green tabular-nums sm:text-[10rem]"
+          className={`font-display leading-none font-black text-neon-green glow-green tabular-nums ${COUNTER_SIZE[density]}`}
         >
-          <AnimatedCount value={participants.length} />
+          <AnimatedCount value={roster.length} />
         </motion.div>
         <div className="mt-2 flex items-center gap-3 text-xs text-white/40">
           {DEMO_MODE && <span className="rounded border border-neon-amber/60 px-1.5 text-neon-amber">DEMO MODE</span>}
           {loading ? 'Connecting to registration feed...' : lastUpdated ? `Last sync ${lastUpdated.toLocaleTimeString()}` : ''}
+          {absentCount > 0 && <span className="text-red-300/80">{absentCount} absent</span>}
+          {walkIns.length > 0 && <span className="text-neon-amber/80">{walkIns.length} walk-in{walkIns.length === 1 ? '' : 's'}</span>}
         </div>
         <AnimatePresence>
           {error && (
@@ -93,17 +132,41 @@ export default function Lobby({ participants, newIds, lastUpdated, error, loadin
         </AnimatePresence>
       </div>
 
-      <div className="mt-8">
-        <Legend participants={participants} />
+      <div className={density === 'dense' ? 'mt-4' : 'mt-8'}>
+        <Legend participants={roster} />
       </div>
 
-      <div className="mt-10 flex w-full max-w-7xl flex-wrap content-start items-center justify-center gap-3 sm:gap-4">
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-white/40">
+        <button type="button" onClick={() => setAddingWalkIn(true)} className={`${controlButton} text-neon-amber/80 hover:text-neon-amber`}>
+          + WALK-IN
+        </button>
+        {(absentCount > 0 || walkIns.length > 0) && (
+          <button type="button" onClick={onResetCheckIns} className={`${controlButton} hover:text-white`}>
+            RESET CHECK-INS
+          </button>
+        )}
+        {participants.length > 0 && <span className="text-[11px]">Click a name to mark them absent</span>}
+      </div>
+
+      <div
+        className={`flex w-full flex-wrap content-start items-center justify-center ${
+          density === 'dense' ? 'mt-5 max-w-[110rem] gap-2' : density === 'compact' ? 'mt-8 max-w-[96rem] gap-2.5 sm:gap-3' : 'mt-10 max-w-7xl gap-3 sm:gap-4'
+        }`}
+      >
         <AnimatePresence>
-          {participants.map((p, i) => (
-            <NameChip key={p.id} participant={p} isNew={newIds.has(p.id)} index={i} />
+          {chips.map((p, i) => (
+            <NameChip
+              key={p.id}
+              participant={p}
+              isNew={newIds.has(p.id)}
+              index={i}
+              absent={absentIds.has(p.id)}
+              density={density}
+              onActivate={activateChip}
+            />
           ))}
         </AnimatePresence>
-        {!loading && participants.length === 0 && (
+        {!loading && chips.length === 0 && (
           <motion.p
             className="mt-12 text-white/40"
             animate={{ opacity: [0.3, 1, 0.3] }}
@@ -140,6 +203,19 @@ export default function Lobby({ participants, newIds, lastUpdated, error, loadin
           </button>
         )}
       </div>
+
+      <AnimatePresence>
+        {addingWalkIn && (
+          <WalkInForm
+            key="walk-in"
+            onClose={() => setAddingWalkIn(false)}
+            onAdd={(details) => {
+              onAddWalkIn(details)
+              setAddingWalkIn(false)
+            }}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }

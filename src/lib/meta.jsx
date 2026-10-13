@@ -58,30 +58,30 @@ export const SKILL_META = {
   },
 }
 
-export function LevelBadge({ level }) {
+export function LevelBadge({ level, compact = false }) {
   const m = LEVEL_META[level] || LEVEL_META.Beginner
   return (
     <span
       title={level}
-      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wider"
+      className="inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wider"
       style={{ color: m.color, background: `${m.color}1f`, border: `1px solid ${m.color}88` }}
     >
-      {'★'.repeat(m.stars)}
+      {!compact && '★'.repeat(m.stars)}
       <span>{m.label}</span>
     </span>
   )
 }
 
-export function SkillBadge({ skill }) {
+export function SkillBadge({ skill, iconOnly = false }) {
   const m = SKILL_META[skill] || SKILL_META.Frontend
   return (
     <span
       title={skill}
-      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wider uppercase"
+      className="inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wider uppercase"
       style={{ color: m.color, background: `${m.color}1f`, border: `1px solid ${m.color}88` }}
     >
       {m.icon}
-      <span>{skill}</span>
+      {!iconOnly && <span>{skill}</span>}
     </span>
   )
 }

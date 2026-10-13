@@ -85,6 +85,20 @@ function improveBySwaps(teams) {
   }
 }
 
+/** Swaps two members between teams; `a` and `b` are `{ teamId, memberId }`. Returns new team objects. */
+export function swapMembers(teams, a, b) {
+  if (a.teamId === b.teamId) return teams
+  const memberA = teams.find((t) => t.id === a.teamId)?.members.find((m) => m.id === a.memberId)
+  const memberB = teams.find((t) => t.id === b.teamId)?.members.find((m) => m.id === b.memberId)
+  if (!memberA || !memberB) return teams
+  const replace = (members, from, to) => members.map((m) => (m.id === from.id ? to : m))
+  return teams.map((t) => {
+    if (t.id === a.teamId) return { ...t, members: replace(t.members, memberA, memberB) }
+    if (t.id === b.teamId) return { ...t, members: replace(t.members, memberB, memberA) }
+    return t
+  })
+}
+
 /**
  * Builds balanced teams:
  *  - Advanced members are spread first so each team gets one before any gets two.

@@ -1,6 +1,8 @@
 // Sound effects are synthesized into WAV blobs at startup and played with HTML5 Audio,
 // so the app ships with no audio assets.
 
+import { SHUFFLE_DURATION_MS } from '../config'
+
 const SAMPLE_RATE = 44100
 
 function encodeWav(samples) {
@@ -82,7 +84,7 @@ function makeSuccess() {
 // Low riser/whoosh used under the shuffle sequence.
 function makeRiser() {
   let phase = 0
-  return render(5.5, (t, p) => {
+  return render(SHUFFLE_DURATION_MS / 1000, (t, p) => {
     const freq = 60 + 340 * p * p
     phase += (2 * Math.PI * freq) / SAMPLE_RATE
     const env = Math.min(1, t * 2) * (p < 0.95 ? 1 : (1 - p) * 20)

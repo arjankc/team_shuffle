@@ -60,7 +60,8 @@ export default function ShuffleSequence({ participants, onDone }) {
     }
   }, [])
 
-  const countdown = Math.max(1, Math.ceil(5 - progress * 5))
+  const countdownFrom = Math.max(1, Math.floor(SHUFFLE_DURATION_MS / 1000))
+  const countdown = Math.max(1, Math.ceil(countdownFrom * (1 - progress)))
   const logCount = Math.min(LOG_LINES.length, Math.floor(progress * LOG_LINES.length) + 1)
   const vortex = progress > 0.55
   const maxR = Math.min(viewport.w, viewport.h) * 0.42

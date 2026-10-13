@@ -1,13 +1,24 @@
-import { AnimatePresence, motion } from 'framer-motion'
-import { useCallback, useEffect, useState } from 'react'
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Background from './components/Background'
 import Lobby from './components/Lobby'
 import ShuffleSequence from './components/ShuffleSequence'
 import Reveal from './components/Reveal'
+import RegistrationQR from './components/RegistrationQR'
 import { useSheetPolling } from './hooks/useSheetPolling'
-import { buildTeams } from './lib/teamAlgorithm'
+import { buildTeams, swapMembers } from './lib/teamAlgorithm'
 import { setMuted, sfx, unlockAudio } from './lib/sounds'
-import { loadLastTeams, loadMuted, saveLastTeams, saveMuted } from './lib/storage'
+import { buildRoster, makeWalkIn, visibleWalkIns } from './lib/roster'
+import {
+  loadAbsentIds,
+  loadLastTeams,
+  loadMuted,
+  loadWalkIns,
+  saveAbsentIds,
+  saveLastTeams,
+  saveMuted,
+  saveWalkIns,
+} from './lib/storage'
 import { MIN_PARTICIPANTS_TO_SHUFFLE } from './config'
 
 const MAX_POPS_PER_BATCH = 8
@@ -69,12 +80,53 @@ export default function App() {
     onNewParticipants: handleNew,
   })
 
+  const [absentIds, setAbsentIds] = useState(loadAbsentIds)
+  const [walkIns, setWalkIns] = useState(loadWalkIns)
+  const shownWalkIns = useMemo(() => visibleWalkIns(participants, walkIns), [participants, walkIns])
+  const roster = useMemo(() => buildRoster(participants, absentIds, walkIns), [participants, absentIds, walkIns])
+
+  useEffect(() => saveAbsentIds(absentIds), [absentIds])
+  useEffect(() => saveWalkIns(walkIns), [walkIns])
+
+  const toggleAbsent = useCallback((p) => {
+    setAbsentIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(p.id)) next.delete(p.id)
+      else next.add(p.id)
+      return next
+    })
+  }, [])
+
+  const addWalkIn = (details) => {
+    const walkIn = makeWalkIn(details)
+    setWalkIns((prev) => [...prev.filter((w) => w.id !== walkIn.id), walkIn])
+    sfx.pop()
+  }
+
+  const removeWalkIn = useCallback((p) => {
+    if (window.confirm(`Remove walk-in ${p.name}?`)) setWalkIns((prev) => prev.filter((w) => w.id !== p.id))
+  }, [])
+
+  const resetCheckIns = () => {
+    if (!window.confirm('Mark everyone present and remove all walk-ins?')) return
+    setAbsentIds(new Set())
+    setWalkIns([])
+  }
+
   const startShuffle = () => {
-    const built = buildTeams(participants)
+    const built = buildTeams(roster)
     setTeams(built)
     saveLastTeams(built)
     setLastTeams({ teams: built, savedAt: new Date().toISOString() })
     setPhase('shuffling')
+  }
+
+  const swap = (a, b) => {
+    const next = swapMembers(teams, a, b)
+    if (next === teams) return
+    setTeams(next)
+    saveLastTeams(next)
+    setLastTeams({ teams: next, savedAt: new Date().toISOString() })
   }
 
   const showLastTeams = () => {
@@ -98,7 +150,7 @@ export default function App() {
   useEffect(() => {
     const onFs = () => setIsFullscreen(Boolean(document.fullscreenElement))
     const onKey = (e) => {
-      if (e.ctrlKey || e.metaKey || e.altKey || e.target.closest?.('input, textarea')) return
+      if (e.ctrlKey || e.metaKey || e.altKey || e.target.closest?.('input, textarea, select')) return
       if (e.key === 'f' || e.key === 'F') toggleFullscreen()
       if (e.key === 'm' || e.key === 'M') toggleMute()
     }
@@ -111,7 +163,7 @@ export default function App() {
   }, [toggleMute])
 
   return (
-    <>
+    <MotionConfig reducedMotion="user">
       <Background />
       <TopControls
         muted={muted}
@@ -124,6 +176,9 @@ export default function App() {
           <Lobby
             key="lobby"
             participants={participants}
+            walkIns={shownWalkIns}
+            roster={roster}
+            absentIds={absentIds}
             newIds={newIds}
             lastUpdated={lastUpdated}
             error={error}
@@ -131,22 +186,28 @@ export default function App() {
             onShuffle={startShuffle}
             lastTeams={lastTeams}
             onShowLastTeams={showLastTeams}
+            onToggleAbsent={toggleAbsent}
+            onAddWalkIn={addWalkIn}
+            onRemoveWalkIn={removeWalkIn}
+            onResetCheckIns={resetCheckIns}
           />
         )}
         {phase === 'shuffling' && (
-          <ShuffleSequence key="shuffle" participants={participants} onDone={() => setPhase('reveal')} />
+          <ShuffleSequence key="shuffle" participants={roster} onDone={() => setPhase('reveal')} />
         )}
         {phase === 'reveal' && (
           <Reveal
             key="reveal"
             teams={teams}
-            canReshuffle={participants.length >= MIN_PARTICIPANTS_TO_SHUFFLE}
+            canReshuffle={roster.length >= MIN_PARTICIPANTS_TO_SHUFFLE}
             onReshuffle={startShuffle}
+            onSwap={swap}
             onBack={() => setPhase('lobby')}
           />
         )}
       </AnimatePresence>
+      {phase === 'lobby' && <RegistrationQR />}
       <AnimatePresence>{!entered && <EnterOverlay key="enter" onEnter={enter} />}</AnimatePresence>
-    </>
+    </MotionConfig>
   )
 }

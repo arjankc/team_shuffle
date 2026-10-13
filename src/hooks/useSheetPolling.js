@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { DEMO_INTERVAL_MS, DEMO_MODE, POLL_INTERVAL_MS, SHEET_CSV_URL } from '../config'
-import { parseParticipants } from '../lib/parse'
+import { DEMO_INTERVAL_MS, DEMO_MODE, DEMO_SEED_COUNT, FEED_URL, POLL_INTERVAL_MS, SHEET_CSV_URL } from '../config'
+import { parseFeed, parseParticipants } from '../lib/parse'
 import { makeDemoParticipant } from '../lib/demo'
 
 const NEW_HIGHLIGHT_MS = 4000
@@ -27,12 +27,16 @@ export function useSheetPolling({ enabled, onNewParticipants }) {
   const onNewRef = useRef(onNewParticipants)
   onNewRef.current = onNewParticipants
 
-  const ingest = useCallback((list) => {
+  // With `replace`, `list` is the full roster and anyone missing from it (e.g. a deleted row) is dropped;
+  // otherwise `list` is a batch to merge in.
+  const ingest = useCallback((list, { replace = false } = {}) => {
     const fresh = list.filter((p) => !knownIds.current.has(p.id))
     fresh.forEach((p) => knownIds.current.add(p.id))
     setParticipants((prev) => {
       const latest = new Map(list.map((p) => [p.id, p]))
-      const updated = prev.map((p) => latest.get(p.id) || p)
+      const updated = replace
+        ? prev.filter((p) => latest.has(p.id)).map((p) => latest.get(p.id))
+        : prev.map((p) => latest.get(p.id) || p)
       const prevIds = new Set(prev.map((p) => p.id))
       return [...updated, ...list.filter((p) => !prevIds.has(p.id))]
     })
@@ -55,11 +59,18 @@ export function useSheetPolling({ enabled, onNewParticipants }) {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
     try {
-      const res = await fetch(withCacheBuster(SHEET_CSV_URL), { cache: 'no-store', signal: controller.signal })
+      const url = FEED_URL || SHEET_CSV_URL
+      const res = await fetch(withCacheBuster(url), { cache: 'no-store', signal: controller.signal })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const text = await res.text()
-      if (/^\s*</.test(text)) throw new Error('Sheet returned HTML - is it published to the web as CSV?')
-      ingest(parseParticipants(text))
+      if (/^\s*</.test(text)) {
+        throw new Error(
+          FEED_URL
+            ? 'Feed returned HTML - is the Apps Script deployed with access for "Anyone"?'
+            : 'Sheet returned HTML - is it published to the web as CSV?',
+        )
+      }
+      ingest(FEED_URL ? parseFeed(JSON.parse(text)) : parseParticipants(text), { replace: true })
       setError(null)
     } catch (err) {
       setError(err.name === 'AbortError' ? 'Request timed out' : err.message || 'Failed to fetch sheet')
@@ -73,7 +84,7 @@ export function useSheetPolling({ enabled, onNewParticipants }) {
   useEffect(() => {
     if (!enabled) return undefined
     if (DEMO_MODE) {
-      if (!initialized.current) ingest(Array.from({ length: 6 }, makeDemoParticipant))
+      if (!initialized.current) ingest(Array.from({ length: DEMO_SEED_COUNT }, makeDemoParticipant))
       const id = setInterval(() => {
         const batch = Array.from({ length: Math.random() < 0.3 ? 2 : 1 }, makeDemoParticipant)
         ingest(batch)

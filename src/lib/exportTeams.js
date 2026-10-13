@@ -9,12 +9,21 @@ export function teamsToText(teams) {
     .join('\n\n')
 }
 
-const csvCell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
+// Form answers are untrusted; a leading quote stops spreadsheets from evaluating them as formulas.
+export function csvCell(v) {
+  const s = String(v ?? '')
+  const safe = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s
+  return `"${safe.replace(/"/g, '""')}"`
+}
 
-export function downloadTeamsCsv(teams) {
+export function teamsToCsv(teams) {
   const rows = [['Team #', 'Team Name', 'Full Name', 'GitHub Username', 'Skill Level', 'Primary Skill', 'Preferred Track']]
   teams.forEach((t) => t.members.forEach((m) => rows.push([t.id, t.name, m.name, m.github, m.level, m.skill, m.track])))
-  const csv = rows.map((r) => r.map(csvCell).join(',')).join('\r\n')
+  return rows.map((r) => r.map(csvCell).join(',')).join('\r\n')
+}
+
+export function downloadTeamsCsv(teams) {
+  const csv = teamsToCsv(teams)
   const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }))
   const a = document.createElement('a')
   a.href = url
