@@ -43,16 +43,40 @@ function EnterOverlay({ onEnter }) {
 }
 
 const topButton =
-  'rounded-lg border border-white/15 bg-panel/80 px-3 py-2 text-xs tracking-widest text-white/70 backdrop-blur hover:border-neon-green hover:text-neon-green'
+  'flex items-center rounded-lg border border-white/15 bg-panel/80 p-2 text-xs tracking-widest text-white/70 backdrop-blur hover:border-neon-green hover:text-neon-green xl:px-3'
 
+const iconProps = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', className: 'xl:hidden' }
+
+function FullscreenIcon({ exit }) {
+  return (
+    <svg {...iconProps}>
+      {exit ? <path d="M8 3v5H3M16 3v5h5M8 21v-5H3M16 21v-5h5" /> : <path d="M3 8V3h5M21 8V3h-5M3 16v5h5M21 16v5h-5" />}
+    </svg>
+  )
+}
+
+function SoundIcon({ muted }) {
+  return (
+    <svg {...iconProps}>
+      <path d="M11 5 6 9H2v6h4l5 4V5z" />
+      {muted ? <path d="m22 9-6 6M16 9l6 6" /> : <path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14" />}
+    </svg>
+  )
+}
+
+// Text labels only on wide screens; icons below xl keep the corner clear of the centered header.
 function TopControls({ muted, onToggleMute, isFullscreen, onToggleFullscreen }) {
+  const fsLabel = isFullscreen ? 'EXIT FULLSCREEN' : 'FULLSCREEN'
+  const soundLabel = muted ? 'SOUND: OFF' : 'SOUND: ON'
   return (
     <div className="fixed top-4 right-4 z-30 flex gap-2">
-      <button type="button" onClick={onToggleFullscreen} title="Fullscreen (F)" className={topButton}>
-        {isFullscreen ? 'EXIT FULLSCREEN' : 'FULLSCREEN'}
+      <button type="button" onClick={onToggleFullscreen} title={`${fsLabel} (F)`} aria-label={fsLabel} className={topButton}>
+        <FullscreenIcon exit={isFullscreen} />
+        <span className="hidden xl:inline">{fsLabel}</span>
       </button>
-      <button type="button" onClick={onToggleMute} title="Mute (M)" className={topButton}>
-        {muted ? 'SOUND: OFF' : 'SOUND: ON'}
+      <button type="button" onClick={onToggleMute} title={`${soundLabel} (M)`} aria-label={soundLabel} className={topButton}>
+        <SoundIcon muted={muted} />
+        <span className="hidden xl:inline">{soundLabel}</span>
       </button>
     </div>
   )

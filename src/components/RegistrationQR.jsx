@@ -20,9 +20,9 @@ export default function RegistrationQR() {
         onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
-        className="fixed top-4 left-4 z-30 flex cursor-zoom-in flex-col items-center gap-1.5 rounded-xl border border-neon-green/50 bg-panel/80 p-2 box-glow-green backdrop-blur"
+        className="fixed top-4 left-4 z-30 flex cursor-zoom-in flex-col items-center gap-1 rounded-xl border border-neon-green/50 bg-panel/80 p-1.5 box-glow-green backdrop-blur sm:gap-1.5 sm:p-2"
       >
-        <span className="block h-20 w-20 sm:h-28 sm:w-28 lg:h-32 lg:w-32">
+        <span className="block h-14 w-14 sm:h-20 sm:w-20 xl:h-32 xl:w-32">
           {!open && (
             <motion.img
               layoutId={LAYOUT_ID}
@@ -32,8 +32,8 @@ export default function RegistrationQR() {
             />
           )}
         </span>
-        <span className="font-display text-[10px] tracking-[0.2em] text-neon-green sm:text-xs">SCAN TO JOIN</span>
-        <span className="text-[10px] font-semibold text-neon-blue sm:text-xs">{displayUrl}</span>
+        <span className="hidden font-display text-[10px] tracking-[0.2em] text-neon-green sm:block xl:text-xs">SCAN TO JOIN</span>
+        <span className="text-[9px] font-semibold text-neon-blue sm:text-[10px] xl:text-xs">{displayUrl}</span>
       </button>
 
       <AnimatePresence>

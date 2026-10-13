@@ -70,7 +70,7 @@ export default function Reveal({ teams, canReshuffle, onReshuffle, onBack, onSwa
 
   return (
     <motion.div
-      className={`min-h-screen px-4 sm:px-8 ${layout.compact ? 'pt-4 pb-4' : 'pt-10 pb-16'}`}
+      className={`min-h-screen px-4 sm:px-8 ${layout.compact ? 'pt-16 pb-4 sm:pt-4' : 'pt-16 pb-16 sm:pt-10'}`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -99,8 +99,8 @@ export default function Reveal({ teams, canReshuffle, onReshuffle, onBack, onSwa
       </motion.div>
 
       <motion.div
-        className={`mx-auto grid max-w-[120rem] items-start justify-center ${layout.gap}`}
-        style={{ gridTemplateColumns: layout.columns }}
+        className={`mx-auto grid max-w-[120rem] items-start justify-center [grid-template-columns:minmax(0,1fr)] sm:[grid-template-columns:var(--team-columns)] ${layout.gap}`}
+        style={{ '--team-columns': layout.columns }}
         variants={container}
         initial="hidden"
         animate="show"

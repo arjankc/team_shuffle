@@ -111,9 +111,9 @@ export default function ShuffleSequence({ participants, onDone }) {
       })}
 
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-        <div className="rounded-2xl border border-neon-green/50 bg-void/85 px-8 py-6 box-glow-green backdrop-blur-md sm:px-12">
+        <div className="mx-4 rounded-2xl border border-neon-green/50 bg-void/85 px-6 py-6 box-glow-green backdrop-blur-md sm:px-12">
           <motion.p
-            className="text-center font-display text-lg font-bold tracking-[0.25em] text-neon-green glow-green sm:text-2xl"
+            className="text-center font-display text-sm font-bold tracking-[0.15em] text-neon-green glow-green sm:text-2xl sm:tracking-[0.25em]"
             animate={{ opacity: [1, 0.5, 1] }}
             transition={{ duration: 0.6, repeat: Infinity }}
           >

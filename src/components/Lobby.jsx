@@ -81,12 +81,13 @@ export default function Lobby({
 
   return (
     <motion.div
-      className="flex min-h-screen flex-col items-center px-4 pt-8 pb-40"
+      className="flex min-h-screen flex-col items-center px-4 pt-28 pb-40 sm:pt-8"
       exit={{ opacity: 0, filter: 'blur(8px)' }}
       transition={{ duration: 0.4 }}
     >
+      {/* Below xl the header shares the top row with the fixed QR code and controls, so it is inset from both corners. */}
       <motion.p
-        className="text-center font-display text-[10px] tracking-[0.3em] text-neon-purple glow-purple sm:text-sm sm:tracking-[0.5em]"
+        className="text-center font-display text-[10px] tracking-[0.3em] text-neon-purple glow-purple sm:px-32 sm:text-xs lg:text-sm lg:tracking-[0.5em] xl:px-0"
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -188,7 +189,7 @@ export default function Lobby({
           transition={{ boxShadow: { duration: 2.5, repeat: Infinity }, scale: { type: 'spring', stiffness: 400, damping: 15 } }}
           className="shuffle-btn rounded-xl p-[3px] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <span className="block rounded-[10px] bg-void px-10 py-4 font-display text-xl font-black tracking-[0.3em] text-white sm:px-16 sm:text-3xl">
+          <span className="block rounded-[10px] bg-void px-7 py-3 font-display text-lg font-black tracking-[0.2em] text-white sm:px-16 sm:py-4 sm:text-3xl sm:tracking-[0.3em]">
             SHUFFLE TEAMS
           </span>
         </motion.button>
